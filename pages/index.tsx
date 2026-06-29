@@ -8,11 +8,6 @@ interface Props {
   products: Product[];
 }
 
-// ---------------------------------------------------------
-// getServerSideProps -> Yeh function Next.js me server par chalta hai
-// (browser me nahi), isliye user ko page already-filled HTML milta hai.
-// Isi se SSR (Server-Side Rendering) hota hai jo requirement me maanga gaya tha.
-// ---------------------------------------------------------
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
     const res = await fetch("https://fakestoreapi.com/products", {
@@ -40,14 +35,24 @@ export const getServerSideProps: GetServerSideProps = async () => {
     };
   }
 };
+
 const ITEMS_PER_PAGE = 8;
 
-export default function Home({ products }: Props) {
+export default function Home({ products: initialProducts }: Props) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Categories nikal rahe hain dropdown filter ke liye (bonus touch)
+  useEffect(() => {
+    if (initialProducts.length === 0) {
+      fetch("https://fakestoreapi.com/products")
+        .then((res) => res.json())
+        .then((data) => setProducts(data))
+        .catch((err) => console.error("Client-side fetch also failed:", err));
+    }
+  }, [initialProducts]);
+
   const categories = useMemo(() => {
     const unique = new Set(products.map((p) => p.category));
     return ["all", ...Array.from(unique)];
@@ -55,8 +60,6 @@ export default function Home({ products }: Props) {
 
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Jab bhi search term ya category badle, thoda "loading" effect dikhate hain
-  // (real app me yeh delay debounce / API call ke time aata hai)
   useEffect(() => {
     setIsFiltering(true);
     const timer = setTimeout(() => {
@@ -65,7 +68,6 @@ export default function Home({ products }: Props) {
     return () => clearTimeout(timer);
   }, [searchTerm, selectedCategory]);
 
-  // Search + category dono ke hisaab se filter karna
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesTitle = product.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -74,26 +76,22 @@ export default function Home({ products }: Props) {
     });
   }, [products, searchTerm, selectedCategory]);
 
-  // Pagination calculation
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Jab search/category change ho, page 1 par wapas le jao
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory]);
 
   return (
     <div className="container py-4">
-      {/* ---------- Header ---------- */}
       <nav className="navbar mb-4">
         <span className="navbar-brand fs-3">🛒 Product Store</span>
       </nav>
 
-      {/* ---------- Search bar + Category filter ---------- */}
       <div className="row mb-4 g-2">
         <div className="col-12 col-md-8">
           <input
@@ -119,12 +117,10 @@ export default function Home({ products }: Props) {
         </div>
       </div>
 
-      {/* ---------- Result count ---------- */}
       <p className="text-muted">
         Showing {filteredProducts.length} product{filteredProducts.length !== 1 && "s"}
       </p>
 
-      {/* ---------- Loading / Products grid ---------- */}
       {isFiltering ? (
         <LoadingSpinner />
       ) : filteredProducts.length === 0 ? (
@@ -137,7 +133,6 @@ export default function Home({ products }: Props) {
         </div>
       )}
 
-      {/* ---------- Pagination ---------- */}
       {totalPages > 1 && !isFiltering && (
         <nav className="d-flex justify-content-center mt-4">
           <ul className="pagination">
