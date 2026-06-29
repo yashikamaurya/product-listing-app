@@ -17,6 +17,10 @@ export const getServerSideProps: GetServerSideProps = async () => {
   try {
     const res = await fetch("https://fakestoreapi.com/products", {
       cache: "no-store",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
     });
 
     if (!res.ok) {
@@ -36,7 +40,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
     };
   }
 };
-
 const ITEMS_PER_PAGE = 8;
 
 export default function Home({ products }: Props) {
