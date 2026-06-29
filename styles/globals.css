@@ -1,0 +1,9 @@
+/* Bootstrap already handles most styling, yahan bas chhoti customizations hain */
+
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
