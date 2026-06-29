@@ -15,14 +15,22 @@ interface Props {
 // ---------------------------------------------------------
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    const res = await fetch("https://fakestoreapi.com/products");
+    const res = await fetch("https://fakestoreapi.com/products", {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("API responded with status:", res.status);
+      return { props: { products: [] } };
+    }
+
     const products: Product[] = await res.json();
 
     return {
       props: { products },
     };
-  } catch {
-    // Agar API fail ho jaye to bhi page crash na ho, empty array bhej do
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
     return {
       props: { products: [] },
     };
